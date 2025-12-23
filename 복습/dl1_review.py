@@ -144,7 +144,7 @@ for epoch in range(epochs):
     tr_loss.backward()
     optimizer.step()
 
-
+# criterion 파라미터 ty, py로 넣어보기!
 class NeuralNet2(torch.nn.Module):
     def __init__(self, input_size, hidden_size):
         super().__init__()
