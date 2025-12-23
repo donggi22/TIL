@@ -114,7 +114,7 @@ class NeuralNet(torch.nn.Module):
 model = NeuralNet(2, 5)
 criterion = torch.nn.BCELoss()
 optimizer = torch.optim.SGD(model.parameters(), lr=0.03)
-epochs = 1000
+epochs = 2000
 
 ty = t_tt_y
 # print(ty) # 0과 1
@@ -134,17 +134,15 @@ py = model(t_tt_x)
 test_loss = criterion(py.squeeze(), ty)
 # print(test_loss.item()) # 0.6931719183921814
 
-'''
 for epoch in range(epochs):
     model.train()
     optimizer.zero_grad()
     tr_output = model(t_tr_x)
-    tr_loss = criterion(t_tr_y, tr_output.squeeze())
+    tr_loss = criterion(tr_output.squeeze(), t_tr_y)
     if epoch % 100 == 0:
         print(f"epoch: {epoch} loss: {tr_loss.item()}")
     tr_loss.backward()
     optimizer.step()
-'''
 
 
 class NeuralNet2(torch.nn.Module):
