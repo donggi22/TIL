@@ -31,7 +31,7 @@ class Inception_Module(nn.Module):
         )
     # 호출은 self.conv(x) 처럼 forward 호출을 말함.
 
-    # nn.Conv2d(...): 인스턴스 생성
+    # nn.Conv2d(...): 인스턴스(레이어) 생성
     # self.conv = nn.Conv2d(...): nn.Module의 서브모듈(레이어)로 등록
     # self.conv(x): forward 호출
     # return nn.Sequential(...): 모듈 반환
