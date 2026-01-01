@@ -8,6 +8,8 @@ class Dropout:
         if train_flg:
             self.mask = np.random.rand(*x.shape) > self.dropout_ratio
             return x * self.mask
+        else:
+            return x * (1.0 - self.dropout_ratio)
     
     def backward(self, dout):
         return dout * self.mask
