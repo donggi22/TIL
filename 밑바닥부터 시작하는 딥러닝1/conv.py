@@ -51,6 +51,52 @@ def col2im(col, input_size, filter_size, stride=1, pad=0):
 # print(col2im(col, input_size, filter_size, stride, pad))
 
 class Convolution:
+    def __init__(self, W, b, stride=1, pad=0):
+        self.W = W
+        self.b = b
+        self.stride = stride
+        self.pad = pad
+
+        # 중간 데이터 (backward 시 사용)
+        self.x = None
+        self.col = None
+        self.col_W = None
+
+        # 가중치와 편향 매개변수의 기울기
+        self.dW = None
+        self.db = None
+
+    def forward(self, x):
+        FN, C, FH, FW = self.W.shape
+        N, C, H, W = x.shape
+        out_h = (H - FH + 2*self.pad) // self.stride + 1
+        out_w = (W - FW + 2*self.pad) // self.stride + 1
+
+        col = im2col(x, (FH, FW), self.stride, self.pad) # (N*out_h*out_w, C*FH*FW)
+        col_W = self.W.reshape(FN, -1).T # (C*FH*FW, FN)
+
+        out = np.dot(col, col_W) + self.b # (N*out_h*out_w, FN)
+        out = out.reshape(N, out_h, out_w, -1).transpose(0, 3, 1, 2) # (N, FN, out_h, out_w)
+
+        self.x = x
+        self.col = col
+        self.col_W = col_W
+        return out
+
+    def backward(self, dout):
+        FN, C, FH, FW = self.W.shape
+        dout = dout.transpose(0, 2, 3, 1).reshape(-1, FN) # (N*out_h*out_w, FN)
+
+        self.db = np.sum(dout, axis=0) # (FN,)
+        self.dW = np.dot(self.col.T, dout) # (C*FH*FW, FN)
+        self.dW = self.dW.T.reshape(FN, C, FH, FW) # (FN, C, FH, FW)
+        dcol = np.dot(dout, self.col_W.T) # (N*out_h*out_w, C*FH*FW)
+
+        dx = col2im(dcol, self.x.shape, (FH, FW), self.stride, self.pad)
+        return dx
+
+# torch 식으로 구현
+class Conv2d:
     def __init__(self, in_channel, out_channel, filter_size, stride=1, pad=0):
         filter_h, filter_w = filter_size
         self.W = np.random.randn(out_channel, in_channel, filter_h, filter_w)
@@ -96,7 +142,7 @@ class Convolution:
         dx = col2im(dcol, self.x.shape, (FH, FW), self.stride, self.pad)
         return dx
     
-# conv = Convolution(3, 1, (3, 3))
+# conv = Conv2d(3, 1, (3, 3))
 
 # x = np.random.randn(3, 3, 28, 28)
 # print(conv.forward(x).shape)
