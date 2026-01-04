@@ -96,19 +96,19 @@ class Convolution:
         dx = col2im(dcol, self.x.shape, (FH, FW), self.stride, self.pad)
         return dx
     
-conv = Convolution(3, 1, (3, 3))
+# conv = Convolution(3, 1, (3, 3))
 
-x = np.random.randn(3, 3, 28, 28)
+# x = np.random.randn(3, 3, 28, 28)
 # print(conv.forward(x).shape)
 # print(conv.forward(x)[0][0].shape)
-img1 = conv.forward(x)[0][0]
-img2 = conv.forward(x)[1][0]
-img3 = conv.forward(x)[2][0]
+# img1 = conv.forward(x)[0][0]
+# img2 = conv.forward(x)[1][0]
+# img3 = conv.forward(x)[2][0]
 
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 
-fig, axs = plt.subplots(1, 3)
-axs[0].imshow(img1)
-axs[1].imshow(img2)
-axs[2].imshow(img3)
-plt.show()
+# fig, axs = plt.subplots(1, 3)
+# axs[0].imshow(img1)
+# axs[1].imshow(img2)
+# axs[2].imshow(img3)
+# plt.show()
