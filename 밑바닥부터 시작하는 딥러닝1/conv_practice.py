@@ -121,11 +121,11 @@ class MaxPooling2d:
         return out
     
     def backward(self, dout):
-        pool_size = self.pool_h * self.pool_w
+        pool_size_mul = self.pool_h * self.pool_w
         
         dout = dout.transpose(0, 2, 3, 1) # (N, out_h, out_w, C)
 
-        dmax = np.zeros((dout.size, pool_size)) # (N*out_h*out_w*C, pool_h*pool_w)
+        dmax = np.zeros((dout.size, pool_size_mul)) # (N*out_h*out_w*C, pool_h*pool_w)
         dmax[np.arange(self.max.size), self.argmax] = dout.flatten() # (N*out_h*out_w*C, pool_h*pool_w)
 
         dcol = dmax.reshape(dout.shape[0]*dout.shape[1]*dout.shape[2], -1) # (N*out_h*out_w, C*pool_h*pool_w)
