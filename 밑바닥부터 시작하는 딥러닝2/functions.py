@@ -1,6 +1,7 @@
 import numpy as np
 
 def sigmoid(x):
+    x = np.clip(x, -500, 500)
     out = 1 / (1 + np.exp(-x))
     return out
 
@@ -17,6 +18,16 @@ def softmax(x):
         x = np.exp(x) / np.exp(x).sum()
     return x
 
+def binary_cross_entropy(y, t):
+    if y.ndim == 1:
+        t = t.reshape(1, t.size)
+        y = y.reshape(1, y.size)
+
+    y = np.clip(y, 1e-7, 1 - 1e-7)
+
+    batch_size = y.shape[0]
+    return -np.sum(t*np.log(y + 1e-7) + (1-t)*np.log(1 - y + 1e-7)) / batch_size
+
 def cross_entropy_error(y, t):
     if y.ndim == 1:
         t = t.reshape(1, t.size)
@@ -24,7 +35,7 @@ def cross_entropy_error(y, t):
     
     # 정답 데이터가 원핫 벡터일 경우 정답 레이블 인덱스로 변환
     if t.size == y.size:
-        t = t.argmax(axis=1)
+        t = t.argmax(axis=1) # (N,)
 
     batch_size = y.shape[0]
     return -np.sum(np.log(y[np.arange(batch_size), t] + 1e-7)) / batch_size

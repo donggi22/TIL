@@ -1,5 +1,5 @@
 import numpy as np
-from functions import sigmoid, softmax, cross_entropy_error
+from functions import sigmoid, softmax, binary_cross_entropy, cross_entropy_error
 
 class MatMul:
     def __init__(self, W):
@@ -20,23 +20,21 @@ class MatMul:
         self.grads[0][...] = dW
         return dx
     
-class Affine(MatMul):
+class Affine:
     def __init__(self, W, b):
-        super().__init__(W)
+        self.matmul = MatMul(W)
 
-        self.params.append(b)
-        self.grads.append(np.zeros_like(b))
+        self.params = [W, b]
+        self.grads = [self.matmul.grads[0], np.zeros_like(b)]
 
     def forward(self, x):
-        out = super().forward(x)
-        
+        out = self.matmul.forward(x) # x dot W
         b = self.params[1]
         out += b
         return out
 
     def backward(self, dout):
-        dx = super().backward(dout)
-
+        dx = self.matmul.backward(dout) # dx, dW
         db = np.sum(dout, axis=0)
         self.grads[1][...] = db
         return dx
@@ -133,8 +131,10 @@ class SigmoidWithLoss:
         self.t = t # 정수 라벨
         self.y = sigmoid(x)
 
-        # CEE(y, t) = -np.sum(np.log(y[np.arange(batch_size), t] + 1e-7)) / batch_size
-        self.loss = cross_entropy_error(np.c_[1 - self.y, self.y], self. t) # 2-class CEE로 BCE와 동일한 결과 얻기 위해 concat => (N, 2)
+        # # CEE(y, t) = -np.sum(np.log(y[np.arange(batch_size), t] + 1e-7)) / batch_size
+        # self.loss = cross_entropy_error(np.c_[1 - self.y, self.y], self. t) # 2-class CEE로 BCE와 동일한 결과 얻기 위해 concat => (N, 2)
+
+        self.loss = binary_cross_entropy(self.y, self.t)
         return self.loss
     
     def backward(self, dout=1):

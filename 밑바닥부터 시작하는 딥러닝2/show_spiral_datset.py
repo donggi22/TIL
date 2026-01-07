@@ -1,0 +1,15 @@
+import numpy as np
+import matplotlib.pyplot as plt
+from spiral import load_data
+
+x, t = load_data()
+print(x.shape)
+print(t.shape)
+
+# 데이터 점 플롯
+N = 100
+CLS_NUM = 3
+markers = ['o', 'x', '^']
+for i in range(CLS_NUM):
+    plt.scatter(x[i*N:(i+1)*N, 0], x[i*N:(i+1)*N, 1], s=40, marker=markers[i])
+plt.show()
