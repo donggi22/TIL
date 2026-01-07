@@ -20,23 +20,21 @@ class MatMul:
         self.grads[0][...] = dW
         return dx
     
-class Affine(MatMul):
+class Affine:
     def __init__(self, W, b):
-        super().__init__(W)
+        self.matmul = MatMul(W)
 
-        self.params.append(b)
-        self.grads.append(np.zeros_like(b))
+        self.params = [W, b]
+        self.grads = [self.matmul.grads[0], np.zeros_like(b)]
 
     def forward(self, x):
-        out = super().forward(x)
-        
+        out = self.matmul.forward(x) # x dot W
         b = self.params[1]
         out += b
         return out
 
     def backward(self, dout):
-        dx = super().backward(dout)
-
+        dx = self.matmul.backward(dout) # dx, dW
         db = np.sum(dout, axis=0)
         self.grads[1][...] = db
         return dx
