@@ -34,7 +34,7 @@ def cross_entropy_error(y, t):
     
     # 정답 데이터가 원핫 벡터일 경우 정답 레이블 인덱스로 변환
     if t.size == y.size:
-        t = t.argmax(axis=1)
+        t = t.argmax(axis=1) # (N,)
 
     batch_size = y.shape[0]
     return -np.sum(np.log(y[np.arange(batch_size), t] + 1e-7)) / batch_size
