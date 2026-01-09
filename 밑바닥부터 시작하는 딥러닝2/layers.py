@@ -131,18 +131,19 @@ class SigmoidWithLoss:
         self.t = t # 정수 라벨
         self.y = sigmoid(x)
 
-        # # CEE(y, t) = -np.sum(np.log(y[np.arange(batch_size), t] + 1e-7)) / batch_size
-        # self.loss = cross_entropy_error(np.c_[1 - self.y, self.y], self. t) # 2-class CEE로 BCE와 동일한 결과 얻기 위해 concat => (N, 2)
+        # CEE(y, t) = -np.sum(np.log(y[np.arange(batch_size), t] + 1e-7)) / batch_size
+        self.loss = cross_entropy_error(np.c_[1 - self.y, self.y], self. t) # 2-class CEE로 BCE와 동일한 결과 얻기 위해 concat => (N, 2)
 
-        self.loss = binary_cross_entropy(self.y, self.t)
+        # self.loss = binary_cross_entropy(self.y, self.t)
         return self.loss
     
     def backward(self, dout=1):
         batch_size = self.t.shape[0]
 
         # self.t를 (N,1)로 맞춰서 뺄셈 정확히 수행
-        t_reshaped = self.t.reshape(-1, 1) if self.t.ndim == 1 else self.t
-        dx = (self.y - t_reshaped) * dout / batch_size
+        # t_reshaped = self.t.reshape(-1, 1) if self.t.ndim == 1 else self.t
+        # dx = (self.y - t_reshaped) * dout / batch_size
+        dx = (self.y - self.t) * dout / batch_size
         return dx
     
 class SoftmaxWithLoss:
@@ -172,3 +173,31 @@ class SoftmaxWithLoss:
         dx[np.arange(batch_size), self.t] -= 1
         dx *= dout / batch_size
         return dx
+    
+class Embedding:
+    def __init__(self, W):
+        self.params = [W]
+        self.grads = [np.zeros_like(W)]
+        self.idx = None
+    
+    def forward(self, idx):
+        W, = self.params
+        self.idx = idx
+        out = W[idx]
+        return out
+    
+    # def backward(self, dout):
+    #     dW, = self.grads
+    #     dW[...] = 0
+    #     dW[self.idx] = dout # 실은 나쁜 예
+    #     return dW
+
+    def backward(self, dout):
+        dW, = self.grads
+        dW[...] = 0
+
+        for i, word_id in enumerate(self.idx):
+            dW[word_id] += dout[i]
+        # 혹은
+        # np.add.at(dW, self,idx, dout) # dout을 dW의 self.idx번째 행에 더해줌.
+        return None
