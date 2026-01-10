@@ -1,4 +1,4 @@
-import numpy as np
+from np import *
 from functions import sigmoid, softmax, binary_cross_entropy, cross_entropy_error
 
 class MatMul:

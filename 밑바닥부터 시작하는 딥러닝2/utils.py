@@ -1,4 +1,5 @@
-import numpy as np
+import numpy
+from np import *
 
 def preprocess(text):
     text = text.lower()
@@ -52,7 +53,7 @@ def most_similar(query, word_to_id, id_to_word, word_matrix, top=5):
 
     # 코사인 유도 계산
     vocab_size = len(id_to_word)
-    similarity = np.zeros(vocab_size)
+    similarity = numpy.zeros(vocab_size)
     for i in range(vocab_size):
         similarity[i] = cos_similarity(word_matrix[i], query_vec)
 
@@ -125,10 +126,9 @@ def clip_grads(grads, max_norm):
             grad *= rate
 
 def to_cpu(x):
-    import numpy
-    if type(x) == numpy.ndarray:
-        return x
-    return np.asarray(x)
+    if hasattr(x, "get"):   # cupy ndarray
+        return x.get()
+    return x
 
 
 def to_gpu(x):
@@ -136,3 +136,40 @@ def to_gpu(x):
     if type(x) == cupy.ndarray:
         return x
     return cupy.asarray(x)
+
+def analogy(a, b, c, word_to_id, id_to_word, word_matrix, top=5, answer=None):
+    for word in (a, b, c):
+        if word not in word_to_id:
+            print('%s(을)를 찾을 수 없습니다.' % word)
+            return
+
+    print('\n[analogy] ' + a + ':' + b + ' = ' + c + ':?')
+    a_vec, b_vec, c_vec = word_matrix[word_to_id[a]], word_matrix[word_to_id[b]], word_matrix[word_to_id[c]]
+    query_vec = b_vec - a_vec + c_vec
+    query_vec = normalize(query_vec)
+
+    similarity = np.dot(word_matrix, query_vec)
+    similarity = similarity.get() if hasattr(similarity, 'get') else similarity
+    if answer is not None:
+        print("==>" + answer + ":" + str(np.dot(word_matrix[word_to_id[answer]], query_vec)))
+
+    count = 0
+    for i in (-1 * similarity).argsort():
+        if np.isnan(similarity[i]):
+            continue
+        if id_to_word[i] in (a, b, c):
+            continue
+        print(' {0}: {1}'.format(id_to_word[i], similarity[i]))
+
+        count += 1
+        if count >= top:
+            return
+        
+def normalize(x):
+    if x.ndim == 2:
+        s = np.sqrt((x * x).sum(1))
+        x /= s.reshape((s.shape[0], 1))
+    elif x.ndim == 1:
+        s = np.sqrt((x * x).sum())
+        x /= s
+    return x
