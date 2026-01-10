@@ -1,4 +1,4 @@
-import numpy as np
+from np import *
 
 def sigmoid(x):
     x = np.clip(x, -500, 500)
