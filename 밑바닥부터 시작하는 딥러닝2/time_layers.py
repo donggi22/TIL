@@ -129,7 +129,12 @@ class TimeAffine:
         W, b = self.params
 
         rx = x.reshape(N*T, -1)
-        out = np.dot(rx, W) + b
+        out = np.dot(rx, W) + b # 모든 시점과 배치를 한 번에 계산 (벡터화로 성능 최적화)
+
+        # # reshape 안 할 경우 for loop로 직접 계산 (Python 레벨 반복문이라 느림)
+        # out = np.zeros((N, T, M))
+        # for t in range(T):
+        #     out[:, t, :] = np.dot(x[:, t, :], W) + b
         self.x = x
         return out.reshape(N, T, -1)
     
