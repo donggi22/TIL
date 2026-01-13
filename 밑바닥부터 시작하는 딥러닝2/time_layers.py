@@ -1,6 +1,6 @@
 from np import *
 from layers import Embedding, Affine, SoftmaxWithLoss
-from functions import softmax
+from functions import softmax, sigmoid
 
 class RNN:
     def __init__(self, Wx, Wh, b):
@@ -84,7 +84,7 @@ class TimeRNN:
         
         for i, grad in enumerate(grads):
             self.grads[i][...] = grad # 한 번에 반영, torch의 optimizer.zero_grad()후 backward하는 것과 같은 효과
-        self.dh = dh
+        self.dh = dh # seq2seq에서 필요
         return dxs
     
 class TimeEmbedding:
@@ -194,3 +194,136 @@ class TimeSoftmaxWithLoss:
 
         dx = dx.reshape((N, T, V))
         return dx
+    
+class LSTM:
+    def __init__(self, Wx, Wh, b):
+        self.params = [Wx, Wh, b]
+        self.grads = [np.zeros_like(Wx), np.zeros_like(Wh), np.zeros_like(b)]
+        self.cache = None
+    
+    def forward(self, x, h_prev, c_prev):
+        Wx, Wh, b = self.params
+        N, H = h_prev.shape
+
+        A = np.matmul(x, Wx) + np.matmul(h_prev, Wh) + b
+
+        # slice
+        f = A[:, :H]
+        g = A[:, H:2*H]
+        i = A[:, 2*H:3*H]
+        o = A[:, 3*H:]
+
+        f = sigmoid(f)
+        g = np.tanh(g)
+        i = sigmoid(i)
+        o = sigmoid(o)
+
+        c_next = f * c_prev + g * i
+        h_next = o * np.tanh(c_next)
+        
+        self.cache = (x, h_prev, c_prev, i, f, g, o, c_next)
+        return h_next, c_next
+    
+    def backward(self, dh_next, dc_next):
+        Wx, Wh, b = self.params
+        x, h_prev, c_prev, i, f, g, o, c_next = self.cache
+
+        tanh_c_next = np.tanh(c_next)
+
+        '''
+        c_next2 = f_next * "c_next" + g_next * i_next
+        h_next = o * np.tanh("c_next")
+        ds = ∂𝐿/∂𝑐_t
+        d𝑐_t = dc_next = ∂𝐿/∂𝑐_{t+1}*∂𝑐_{t+1}/∂𝑐_t
+        dh_t = dh_next = ∂𝐿/∂h_t
+        ∂h_t/∂𝑐_t = o * (1 - tan_c_next**2)
+        '''
+        ds = dc_next + dh_next * o * (1 - tanh_c_next**2) # ∂𝐿/∂𝑐_t = ∂𝐿/∂𝑐_{t+1}*∂c_{t+1}/∂𝑐_t + ∂𝐿/∂h_t*∂h_t/∂𝑐_t
+                                                            #                 (시간 경로)             (출력 경로)
+
+        # c_next = f * c_prev + g * i
+        dc_prev = ds * f
+
+        # c_next = f * c_prev + g * i
+        # h_next = o * tanh_c_next
+        di = ds * g
+        df = ds * c_prev
+        do = dh_next * tanh_c_next
+        dg = ds * i
+
+        di *= i * (1 - i)
+        df *= f * (1 - f)
+        do *= o * (1 - o)
+        dg *= (1 - g**2)
+
+        dA = np.hstack((df, dg, di, do)) # slice한 4개의 기울기 결합
+
+        # A = np.matmul(x, Wx) + np.matmul(h_prev, Wh) + b
+        dWh = np.matmul(h_prev.T, dA) # (H, 4H)
+        dWx = np.matmul(x.T, dA) # (D, 4H)
+        db = np.sum(dA, axis=0) # (4H,)
+
+        self.grads[0][...] = dWx
+        self.grads[1][...] = dWh
+        self.grads[2][...] = db
+
+        dx = np.matmul(dA, Wx.T)
+        dh_prev = np.matmul(dA, Wh.T)
+        return dx, dh_prev, dc_prev
+    
+class TimeLSTM:
+    def __init__(self, Wx, Wh, b, stateful=False):
+        self.params = [Wx, Wh, b]
+        self.grads = [np.zeros_like(Wx), np.zeros_like(Wh), np.zeros_like(b)]
+        self.layers = None
+        self.h, self.c = None, None
+        self.dh = None
+        self.stateful = stateful
+
+    def forward(self, xs):
+        Wx, Wh, b = self.params
+        N, T, D = xs.shape
+        H = Wh.shape[0]
+        
+        self.layers = []
+        hs = np.empty((N, T, H), dtype='f')
+
+        if not self.stateful or self.h is None: # 상태 초기화 지정
+            self.h = np.zeros((N, H), dtype='f')
+        if not self.stateful or self.c is None:
+            self.c = np.zeros((N, H), dtype='f')
+
+        for t in range(T):
+            layer = LSTM(*self.params)
+            self.h, self.c = layer.forward(xs[:, t, :], self.h, self.c)
+            hs[:, t, :] = self.h
+            
+            self.layers.append(layer)
+        return hs
+        
+    def backward(self, dhs):
+        Wx, Wh, b = self.params
+        N, T, H = dhs.shape
+        D = Wx.shape[0]
+
+        dxs = np.empty((N, T, D), dtype='f')
+        dh, dc = np.zeros_like(self.h), np.zeros_like(self.c)
+
+        grads = [np.zeros_like(Wx), np.zeros_like(Wh), np.zeros_like(b)]
+        for t in reversed(range(T)):
+            layer = self.layers[t]
+            dx, dh, dc = layer.backward(dhs[:, t, :] + dh, dc)
+            dxs[:, t, :] = dx
+            for i, grad in enumerate(layer.grads):
+                grads[i] += grad
+
+        for i, grad in enumerate(grads):
+            self.grads[i][...] = grad
+        self.dh = dh # seq2seq에서 필요
+        return dxs
+    
+    def set_state(self, h, c=None):
+        self.h, self.c = h, c
+    
+    def reset_state(self):
+        self.h, self.c = None, None
