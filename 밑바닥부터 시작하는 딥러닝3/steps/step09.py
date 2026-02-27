@@ -2,6 +2,9 @@ import numpy as np
 
 class Variable:
     def __init__(self, data):
+        if data is not None:
+            if not isinstance(data, np.ndarray):
+                raise TypeError('{}은(는) 지원하지 않습니다.'.format(type(data)))
         self.data = data
         self.grad = None
         self.creator = None
@@ -10,6 +13,9 @@ class Variable:
         self.creator = func
     
     def backward(self):
+        if self.grad is None:
+            self.grad = np.ones_like(self.data)
+
         funcs = [self.creator]
         while funcs:
             f = funcs.pop() # 함수를 가져온다.
@@ -19,11 +25,16 @@ class Variable:
             if x.creator is not None:
                 funcs.append(x.creator) # 하나 앞의 함수를 리스트에 추가한다.
 
+def as_array(x):
+    if np.isscalar(x):
+        return np.array(x)
+    return x
+
 class Function:
     def __call__(self, input):
         x = input.data
         y = self.forward(x)
-        output = Variable(y)
+        output = Variable(as_array(y))
         output.set_creator(self) # 출력 변수에 창조를 설정한다. 여기서 self는 메서드를 호출하는 객체(함수 클래스, func에 대응되는 객체)
         self.input = input
         self.output = output # 출력도 저장한다.
@@ -65,6 +76,5 @@ def exp(x):
 
 x = Variable(np.array(0.5))
 y = square(exp(square(x))) # 연속하여 적용
-y.grad = np.array(1.0)
 y.backward()
 print(x.grad)
