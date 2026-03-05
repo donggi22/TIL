@@ -176,9 +176,10 @@ def square(x):
     return f(x)
 
 Variable.__add__ = add # Variable 클래스에 + 연산자 오버로드 연결
-Variable.__radd__ = add # Variable 클래스에 역방향 + 연산자 오버로드 연결
+Variable.__radd__ = add # Variable 클래스에 역방향 + 연산자 오버로드 연결. a + b에서 b.__radd__(a) => add(b, a)
 Variable.__mul__ = mul # Variable 클래스에 * 연산자 오버로드 연결
-Variable.__rmul__ = mul # Variable 클래스에 역방향 * 연산자 오버로드 연결
+Variable.__rmul__ = mul # Variable 클래스에 역방향 * 연산자 오버로드 연결 a * b에서 b.__rmul__(a) => mul(b, a)
+
 x = Variable(np.array(2.0))
 y = x + np.array(3.0)
 print(y)
