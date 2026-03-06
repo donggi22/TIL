@@ -204,7 +204,7 @@ def div(x0, x1):
 
 def rdiv(x0, x1):
     x1 = as_array(x1)
-    return div(x1, x0) # x0와 x1의 순서를 바꾼다.
+    return Div()(x1, x0) # x0와 x1의 순서를 바꾼다.
 
 class Pow(Function):
     def __init__(self, c):
