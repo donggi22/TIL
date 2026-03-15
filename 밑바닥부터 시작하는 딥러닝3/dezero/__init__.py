@@ -13,7 +13,7 @@ if is_simple_core:
     from dezero.core_simple import as_variable
     from dezero.core_simple import setup_variable
 
-# else:
+else:
     from dezero.core import Variable
     # from dezero.core import Parameter
     from dezero.core import Function
