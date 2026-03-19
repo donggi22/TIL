@@ -27,6 +27,12 @@ y.backward()
 
 x = Variable(np.random.rand(2, 3))
 y = x.transpose()
-print(y)
+# print(y)
 y = x.T
+# print(y)
+
+A, B, C, D = 1, 2, 3, 4
+x = Variable(np.random.rand(A, B, C, D))
+print(x, '\n')
+y = x.transpose(1, 0, 3, 2)
 print(y)
