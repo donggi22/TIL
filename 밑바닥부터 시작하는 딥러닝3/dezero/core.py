@@ -1,6 +1,7 @@
 import weakref
 import numpy as np
 import contextlib
+import dezero
 
 class Config:
     enable_backprop = True
@@ -104,6 +105,23 @@ class Variable:
             if not retain_grad:
                 for y in f.outputs:
                     y().grad = None # y는 약한 참조(weakref)라서 ()로 호출
+
+    def reshape(self, *shape):
+        if len(shape) == 1 and isinstance(shape[0], (tuple, list)): # shape = 2, 3 | ([2, 3],) | ((2, 3),)일 때, 셋 다 동일한 shape으로 취급하기 위한 작업
+            shape = shape[0]
+        return dezero.functions.reshape(self, shape)
+    
+    def transpose(self, *axes):
+        if len(axes) == 0:
+            axes = None
+        elif len(axes) == 1:
+            if isinstance(axes[0], (tuple, list)) or axes[0] is None:
+                axes = axes[0]
+        return dezero.functions.transpose(self, axes)
+    
+    @property
+    def T(self):
+        return dezero.functions.transpose(self)
 
 def as_variable(obj):
     if isinstance(obj, Variable):
