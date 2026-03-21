@@ -62,7 +62,7 @@ class Transpose(Function):
         self.axes = axes
 
     def forward(self, x):
-        y = x.transpose(self.axes)
+        y = x.transpose(self.axes) # numpy.ndarray.transpose() 호출
         return y
 
     def backward(self, gy):
@@ -70,7 +70,9 @@ class Transpose(Function):
             return transpose(gy)
 
         axes_len = len(self.axes)
-        inv_axes = tuple(np.argsort([ax % axes_len for ax in self.axes]))
+        inv_axes = tuple(np.argsort([ax % axes_len for ax in self.axes])) # 값을 정렬했을 때 원래 인덱스 순서를 반환
+        # np.argsort((20, 30, 10)) -> np.argsort((20, 30, 10))
+        # ax % axes_len -> -1 % axes_len == axes_len 마지막 축(-1)을 0 ~ axes_len-1 사이의 정수 값으로 변환
         return transpose(gy, inv_axes)
     
 def transpose(x, axes=None):
