@@ -163,11 +163,16 @@ class Function:
 
 class Add(Function):
     def forward(self, x0, x1):
+        self.x0_shape, self.x1_shape = x0.shape, x1.shape
         y = x0 + x1
         return y
     
     def backward(self, gy):
-        return gy, gy
+        gx0, gx1 = gy, gy
+        if self.x0_shape != self.x1_shape: # 순전파에서 브로드캐스트가 일어나면 x0와 x1의 형상이 다름
+            gx0 = dezero.functions.sum_to(gx0, self.x0_shape) # 순전파 때 브로드 캐스트 된 걸 x0의 형상이 되도록 합
+            gx1 = dezero.functions.sum_to(gx1, self.x1_shape) # 순전파 때 브로드 캐스트 된 걸 x1의 형상이 되도록 합
+        return gx0, gx1
 
 def add(x0, x1):
     x1 = as_array(x1)
