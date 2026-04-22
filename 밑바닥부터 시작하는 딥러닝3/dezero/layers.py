@@ -8,7 +8,7 @@ class Layer:
         self._params = set()
 
     def __setattr__(self, name, value):
-        if isinstance(value, Parameter):
+        if isinstance(value, (Parameter, Layer)): # Layer도 추가
             self._params.add(name)
         super().__setattr__(name, value) # 무한 재귀 방지
 
@@ -25,7 +25,12 @@ class Layer:
     
     def params(self):
         for name in self._params:
-            yield self.__dict__[name]
+            obj = self.__dict__[name]
+
+            if isinstance(obj, Layer): # Layer에서 매개변수 꺼내기
+                yield from obj.params()
+            else:
+                yield obj
 
     def cleargrads(self):
         for param in self.params():
