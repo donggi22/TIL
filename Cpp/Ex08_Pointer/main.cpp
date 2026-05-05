@@ -13,7 +13,7 @@ int main()
     
     int *b = &a; // b에 a의 주소 대입
 
-    // deference operator (역참조 연산자)
+    // dereference operator (역참조 연산자)
     cout << b << " " << *b << endl;
     
     *b = 567;
