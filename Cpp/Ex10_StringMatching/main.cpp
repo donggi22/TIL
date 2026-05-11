@@ -43,7 +43,17 @@ bool IsEqual(const char str1[], const char str2[])
         return false;
     }
 
-    while (i < Len(str1))
+    int bigger_len = 0;
+
+    if (Len(str1) >= Len(str2))
+    {
+        bigger_len = Len(str1);
+    }
+    else
+    {
+        bigger_len = Len(str2);
+    }
+    while (i < bigger_len)
     {
         if (str1[i] == str2[i])
         {
